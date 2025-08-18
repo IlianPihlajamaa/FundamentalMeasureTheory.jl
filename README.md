@@ -51,8 +51,7 @@ These scripts process the raw data from the `Data/` directory and save the resul
 
 ```bash
 julia src/compute_S.jl
-julia src/compute_c3.jl
-julia src/compute_S34.jl
+julia src/compute_S3.jl
 julia src/compute_S4.jl
 ```
 
@@ -64,6 +63,7 @@ These scripts average the results from the computation step over all the random 
 julia src/average_Sk.jl
 julia src/average_S3.jl
 julia src/average_S4.jl
+julia src/compute_c3.jl # this uses the mean Sk data
 ```
 
 #### c. Comparison with FMT and Plotting
@@ -76,8 +76,8 @@ julia src/FMT_S3.jl
 julia src/FMT_S4.jl
 ```
 
-After running these scripts, the `Plots/` directory will contain the figures from the paper.
+After running these scripts, the `Plots/` directory will contain the figures from the paper and a some that arre not included.
 
 ## Citation
 
-If you use this code in your research, please add a citation to the original paper. [TODO: Add paper citation]
+If you use this code in your research, please add a citation to the original paper. 
