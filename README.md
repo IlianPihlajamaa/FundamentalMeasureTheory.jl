@@ -27,7 +27,7 @@ Pkg.activate(".")
 Pkg.instantiate()
 ```
 
-This will install the correct versions of all dependencies, including `SimulationCode.jl` from `https://github.com/IlianPihlajamaa/SimulationCode.jl` and `SimulationAnalysis.jl` from ``https://github.com/IlianPihlajamaa/SimulationAnalysis.jl``
+This will install the correct versions of all dependencies, including two unregistered packages: `SimulationCode.jl` from `https://github.com/IlianPihlajamaa/SimulationCode.jl` (SHA: a967ac9b187335512f900e1218ef41c536216584) and `SimulationAnalysis.jl` from ``https://github.com/IlianPihlajamaa/SimulationAnalysis.jl`` (SHA: 998e4416fe4e40c05e4ab46ef6c8c002d3fd9b8f).
 
 ### 2. Data Generation (Optional)
 

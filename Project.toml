@@ -19,3 +19,7 @@ SimulationAnalysis = "4b2ff026-35bb-4ce8-b55e-5370bda4a9ea"
 SimulationCode = "9988b2a0-d75d-46ef-975f-2dfcff00755f"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
+
+[compat]
+SimulationAnalysis = "0.2.0"
+SimulationCode = "0.1.0"
