@@ -19,6 +19,11 @@ ygridvisible = false,))
 set_theme!(merge(mytheme, theme_latexfonts()))
 Makie.theme(:palette).color[] = ColorSchemes.:ColorSchemes.:seaborn_muted6
 
+colors = [ColorSchemes.:Dark2_8[(i-1)/7] for i in 1:8]
+linestyles = [ :solid, (:dash, :dense), :dash, (:dash, :loose), :dashdot, (:dot, :dense), :dot, (:dot, :loose)]
+
+
+
 function find_analytical_C_k(k, η)
     A = -(1 - η)^-4 *(1 + 2η)^2
     B = (1 - η)^-4*  6η*(1 + η/2)^2
@@ -231,6 +236,18 @@ n_cubed = n_tensor * n_tensor * n_tensor
 Φ_WB2t = - n0*log(1-n3) +  (1+n3^2*ϕ2WB2(n3)/9)*(n1*n2-n1dotn2)/(1-n3) +
         (1-4*n3*ϕ3WB2(n3)/9) * φ3_tensor
 
+#Lutsko’s Phi3
+Φ3_L_func(A, B) = ((8A + 2B)/9*n2^3 - 2*A*n2*n2dotn2 +3*A*vTv - (A+B)*n2*tr(n_squared) + (2B-A)*tr(n_cubed))/(24*Pi*(1-n3)^2)
+
+# Tarazona is A=3/2, B=-3/2: fill in random numbers to check
+@assert abs(substitute(φ3_tensor, Dict(n3 =>0.1523, n2=>0.53, n2x=>0.1, n2y=>0.2, n2z=>0.3, n2xx=>0.01, n2xy=>0.02, n2xz=>0.03, n2yx=>0.02, n2yy=>0.04, n2yz=>0.05, n2zx=>0.03, n2zy=>0.05, n2zz=>0.06)) - 
+substitute(Φ3_L_func(3/2, -3/2), Dict(n2=>0.53, n2x=>0.1, n2y=>0.2, n2z=>0.3, n2xx=>0.01, n2xy=>0.02, n2xz=>0.03, n2yx=>0.02, n2yy=>0.04, n2yz=>0.05, n2zx=>0.03, n2zy=>0.05, n2zz=>0.06, n3 =>0.1523, ))) < 1e-17
+
+# Lutsko is A=1, B=0
+Φ_L = - n0*log(1-n3) +  (n1*n2-n1dotn2)/(1-n3) + Φ3_L_func(1, 0)
+# Gül is A = 1.3, B = -1
+Φ_G = - n0*log(1-n3) +  (n1*n2-n1dotn2)/(1-n3) + Φ3_L_func(1.3, -1)
+
 homogeneity_substitutions = Dict(
     Pi=>pi,
     n0=>ρ, 
@@ -249,6 +266,8 @@ direct_cor2_M = compute_pair_direct_correlation_function(Φ_M, n, ω, homogeneit
 direct_cor2_KR = compute_pair_direct_correlation_function(Φ_KR, n_KR, ω_KR, homogeneity_substitutions)
 direct_cor2_T = compute_pair_direct_correlation_function(Φ_T, n_T, ω_T, homogeneity_substitutions)
 direct_cor2_WB2t = compute_pair_direct_correlation_function(Φ_WB2t, n_T, ω_T, homogeneity_substitutions)
+direct_cor2_L = compute_pair_direct_correlation_function(Φ_L, n_T, ω_T, homogeneity_substitutions)
+direct_cor2_G = compute_pair_direct_correlation_function(Φ_G, n_T, ω_T, homogeneity_substitutions)
 
 # @show direct_cor2_RF(0.1, 0.94)*0.94
 # @show direct_cor2_WB(0.1, 0.94)*0.94
@@ -269,6 +288,8 @@ direct_cor3_M = compute_triplet_direct_correlation_function(Φ_M, n, ω, homogen
 direct_cor3_KR = compute_triplet_direct_correlation_function(Φ_KR, n_KR, ω_KR, homogeneity_substitutions)
 direct_cor3_T = compute_triplet_direct_correlation_function(Φ_T, n_T, ω_T, homogeneity_substitutions)
 direct_cor3_WB2t = compute_triplet_direct_correlation_function(Φ_WB2t, n_T, ω_T, homogeneity_substitutions)
+direct_cor3_L = compute_triplet_direct_correlation_function(Φ_L, n_T, ω_T, homogeneity_substitutions)
+direct_cor3_G = compute_triplet_direct_correlation_function(Φ_G, n_T, ω_T, homogeneity_substitutions)
 
 # @show direct_cor3_RF(0.1, 0.1, acos(-0.175), 0.94)*0.94^2
 # @show direct_cor3_WB(0.1, 0.1, acos(-0.175), 0.94)*0.94^2
@@ -332,6 +353,9 @@ for rho in [0.8, 0.94]
         S3_M = @. get_S3(direct_cor2_M, direct_cor3_M, k1_interpl, k2_interpl, acos(cos_theta_interpl), rho)
         S3_T = @. get_S3(direct_cor2_T, direct_cor3_T, k1_interpl, k2_interpl, acos(cos_theta_interpl), rho)
         S3_WB2t = @. get_S3(direct_cor2_WB2t, direct_cor3_WB2t, k1_interpl, k2_interpl, acos(cos_theta_interpl), rho)
+        # S3_KR = @. get_S3(direct_cor2_KR, direct_cor3_KR, k1_interpl, k2_interpl, acos(cos_theta_interpl), rho)
+        S3_L = @. get_S3(direct_cor2_L, direct_cor3_L, k1_interpl, k2_interpl, acos(cos_theta_interpl), rho)
+        S3_G = @. get_S3(direct_cor2_G, direct_cor3_G, k1_interpl, k2_interpl, acos(cos_theta_interpl), rho)
  
 
         # find which type of sweep it is by seeing if costheta is constant
@@ -349,12 +373,14 @@ for rho in [0.8, 0.94]
                 println("Sweeping k1=k2=k")
                 ax = Axis(f[1, 1], xlabel=L"k", ylabel=L"S_3(k_1=k_2=k,\,\theta=%$(θdivπ)\pi)")
             end
-            lines!(ax, k1_interpl, S3_RF, linewidth = 3, label = "R")
-            lines!(ax, k1_interpl, S3_WB, linewidth = 3, label = "WBI")
-            lines!(ax, k1_interpl, S3_WB2, linewidth = 3, label = "WBII", linestyle = :dash)
-            lines!(ax, k1_interpl, S3_M, linewidth = 3, label = "M", linestyle = :dash)
-            lines!(ax, k1_interpl, S3_T, linewidth = 3, label = "T", linestyle = :dash)
-            lines!(ax, k1_interpl, S3_WB2t, linewidth = 3, label = "WBIIt", linestyle = :dash)
+            lines!(ax, k1_interpl, S3_RF, linewidth = 3, label = "R", color=colors[1], linestyle=linestyles[1])
+            lines!(ax, k1_interpl, S3_WB, linewidth = 3, label = "WBI", color=colors[2], linestyle=linestyles[2])
+            lines!(ax, k1_interpl, S3_WB2, linewidth = 3, label = "WBII", color=colors[3], linestyle=linestyles[3])
+            lines!(ax, k1_interpl, S3_M, linewidth = 3, label = "M", color=colors[4], linestyle=linestyles[4])
+            lines!(ax, k1_interpl, S3_T, linewidth = 3, label = "T", color=colors[5], linestyle=linestyles[5])
+            lines!(ax, k1_interpl, S3_WB2t, linewidth = 3, label = "WBIIt", color=colors[6], linestyle=linestyles[6])
+            lines!(ax, k1_interpl, S3_L, linewidth = 3, label = "L", color=colors[7], linestyle=linestyles[7])
+            lines!(ax, k1_interpl, S3_G, linewidth = 3, label = "G", color=colors[8], linestyle=linestyles[8])
             scatter!(ax, k1, S3_mean, label="MC Data", color=:black)
             errorbars!(ax, k1, S3_mean, S3_std_err, color=:black, whiskerwidth=4)
         else
@@ -365,12 +391,14 @@ for rho in [0.8, 0.94]
             @assert k1val == k2val
             ax = Axis(f[1, 1], xlabel=L"\cos(\theta)", ylabel=L"S_.3(k_1=k_2=%$(k1val),\,\cos\,\theta)")
 
-            lines!(ax, cos_theta_interpl, S3_RF,linewidth = 3, label = "R")
-            lines!(ax, cos_theta_interpl, S3_WB, linewidth = 3, label = "WBI")
-            lines!(ax, cos_theta_interpl, S3_WB2, linewidth = 3, label = "WBII", linestyle = :dash)
-            lines!(ax, cos_theta_interpl, S3_M, linewidth = 3, label = "M", linestyle = :dash)
-            lines!(ax, cos_theta_interpl, S3_T, linewidth = 3, label = "T", linestyle = :dash)
-            lines!(ax, cos_theta_interpl, S3_WB2t, linewidth = 3, label = "WBIIt", linestyle = :dash)
+            lines!(ax, cos_theta_interpl, S3_RF,linewidth = 3, label = "R", color=colors[1], linestyle=linestyles[1])
+            lines!(ax, cos_theta_interpl, S3_WB, linewidth = 3, label = "WBI" , color=colors[2], linestyle=linestyles[2])
+            lines!(ax, cos_theta_interpl, S3_WB2, linewidth = 3, label = "WBII", color=colors[3], linestyle=linestyles[3])
+            lines!(ax, cos_theta_interpl, S3_M, linewidth = 3, label = "M", color=colors[4], linestyle=linestyles[4])
+            lines!(ax, cos_theta_interpl, S3_T, linewidth = 3, label = "T", color=colors[5], linestyle=linestyles[5])
+            lines!(ax, cos_theta_interpl, S3_WB2t, linewidth = 3, label = "WBIIt", color=colors[6], linestyle=linestyles[6])
+            lines!(ax, cos_theta_interpl, S3_L, linewidth = 3, label = "L", color=colors[7], linestyle=linestyles[7])
+            lines!(ax, cos_theta_interpl, S3_G, linewidth = 3, label = "G", color=colors[8], linestyle=linestyles[8])
             scatter!(ax, cos_theta, S3_mean, label="MC Data", color=:black)
             errorbars!(ax, cos_theta, S3_mean, S3_std_err, color=:black, whiskerwidth=4)
         end
@@ -442,6 +470,9 @@ for i in 1:2
         S3_M = @. get_S3(direct_cor2_M, direct_cor3_M, k1_interpl, k2_interpl, acos(cos_theta_interpl), rho)
         S3_T = @. get_S3(direct_cor2_T, direct_cor3_T, k1_interpl, k2_interpl, acos(cos_theta_interpl), rho)
         S3_WB2t = @. get_S3(direct_cor2_WB2t, direct_cor3_WB2t, k1_interpl, k2_interpl, acos(cos_theta_interpl), rho)
+        # S3_KR = @. get_S3(direct_cor2_KR, direct_cor3_KR, k1_interpl, k2_interpl, acos(cos_theta_interpl), rho)
+        S3_L = @. get_S3(direct_cor2_L, direct_cor3_L, k1_interpl, k2_interpl, acos(cos_theta_interpl), rho)
+        S3_G = @. get_S3(direct_cor2_G, direct_cor3_G, k1_interpl, k2_interpl, acos(cos_theta_interpl), rho)
         foo(x...) = 0.0 
         S3_conv = @. get_S3(direct_cor2_RF, foo, k1_interpl, k2_interpl, acos(cos_theta_interpl), rho)
         j==1&&i==3 && @show S3_conv
@@ -451,25 +482,30 @@ for i in 1:2
             k1val = k1[1]
             k2val = k2[1]
             @assert k1val == k2val
-            lines!(ax, cos_theta_interpl, S3_RF,linewidth = 3, label = "R")
-            lines!(ax, cos_theta_interpl, S3_WB, linewidth = 3, label = "WBI")
-            lines!(ax, cos_theta_interpl, S3_WB2, linewidth = 3, label = "WBII", linestyle = :dash)
-            lines!(ax, cos_theta_interpl, S3_M, linewidth = 3, label = "M", linestyle = :dash)
-            lines!(ax, cos_theta_interpl, S3_T, linewidth = 3, label = "T", linestyle = :dash)
-            lines!(ax, cos_theta_interpl, S3_WB2t, linewidth = 3, label = "WBIIt", linestyle = :dash)
-            lines!(ax, cos_theta_interpl, S3_conv, linewidth = 3, label = "conv", linestyle = :dot)
+            lines!(ax, cos_theta_interpl, S3_RF,linewidth = 3, label = "R", color=colors[1], linestyle=linestyles[1])
+            lines!(ax, cos_theta_interpl, S3_WB, linewidth = 3, label = "WBI", color=colors[2], linestyle=linestyles[2])
+            lines!(ax, cos_theta_interpl, S3_WB2, linewidth = 3, label = "WBII", color=colors[3], linestyle=linestyles[3])
+            lines!(ax, cos_theta_interpl, S3_M, linewidth = 3, label = "M", color=colors[4], linestyle=linestyles[4])
+            lines!(ax, cos_theta_interpl, S3_T, linewidth = 3, label = "T", color=colors[5], linestyle=linestyles[5])
+            lines!(ax, cos_theta_interpl, S3_WB2t, linewidth = 3, label = "WBIIt", color=colors[6], linestyle=linestyles[6])
+            lines!(ax, cos_theta_interpl, S3_L, linewidth = 3, label = "L", color=colors[7], linestyle=linestyles[7])
+            lines!(ax, cos_theta_interpl, S3_G, linewidth = 3, label = "G", color=colors[8], linestyle=linestyles[8])
+            lines!(ax, cos_theta_interpl, S3_conv, linewidth = 3, label = "conv", color=:black, linestyle=:dash)
             scatter!(ax, cos_theta, S3_mean, label="MC Data", color=:black)
             errorbars!(ax, cos_theta, S3_mean, S3_std_err, color=:black, whiskerwidth=4)
             text!(ax, 1, 1, text=L"k_1=k_2=%$(k1val)", align=(:right, :top), offset=(-50,-10), space=:relative)
         else
             # sweeping k1 at fixed k2 or k1 and k2
-            lines!(ax, k1_interpl, S3_RF,linewidth = 3, label = "R")
-            lines!(ax, k1_interpl, S3_WB, linewidth = 3, label = "WBI")
-            lines!(ax, k1_interpl, S3_WB2, linewidth = 3, label = "WBII", linestyle = :dash)
-            lines!(ax, k1_interpl, S3_M, linewidth = 3, label = "M", linestyle = :dash)
-            lines!(ax, k1_interpl, S3_T, linewidth = 3, label = "T", linestyle = :dash)
-            lines!(ax, k1_interpl, S3_WB2t, linewidth = 3, label = "WBIIt", linestyle = :dash)
-            lines!(ax, k1_interpl, S3_conv, linewidth = 3, label = "conv", linestyle = :dot)
+            lines!(ax, k1_interpl, S3_RF,linewidth = 3, label = "R", color=colors[1], linestyle=linestyles[1])
+            lines!(ax, k1_interpl, S3_WB, linewidth = 3, label = "WBI", color=colors[2], linestyle=linestyles[2])
+            lines!(ax, k1_interpl, S3_WB2, linewidth = 3, label = "WBII", color=colors[3], linestyle=linestyles[3])
+            lines!(ax, k1_interpl, S3_M, linewidth = 3, label = "M", color=colors[4], linestyle=linestyles[4])
+            lines!(ax, k1_interpl, S3_T, linewidth = 3, label = "T", color=colors[5], linestyle=linestyles[5])
+            lines!(ax, k1_interpl, S3_WB2t, linewidth = 3, label = "WBIIt", color=colors[6], linestyle=linestyles[6])
+            lines!(ax, k1_interpl, S3_L, linewidth = 3, label = "L", color=colors[7], linestyle=linestyles[7])
+            lines!(ax, k1_interpl, S3_G, linewidth = 3, label = "G", color=colors[8], linestyle=linestyles[8])
+            lines!(ax, k1_interpl, S3_conv, linewidth = 3, label = "conv", color=:black, linestyle=:dash)
+
             scatter!(ax, k1, S3_mean, label="MC Data", color=:black)
             errorbars!(ax, k1, S3_mean, S3_std_err, color=:black, whiskerwidth=4)
             text!(ax, 1, 1, text=L"\theta=%$(round(acos(cos_theta[1])/π, digits=3))\pi", align=(:right, :top), offset=(-50,-10), space=:relative)
@@ -486,8 +522,7 @@ for (ax,label) in zip(transpose_matrix(axs)[:], ["(a)", "(b)", "(c)", "(d)", "(e
 end
 colgap!(fig.layout, 5)
 rowgap!(fig.layout, 5)
-
-axislegend(ax13, position = :rc, framevisible = false, rowgap=0)
+axislegend(ax13, position = :rc, framevisible = false, patchsize=(30,20), rowgap=-2)
 
 
 display(fig)
@@ -563,6 +598,8 @@ begin
             C3_M = @. direct_cor3_M(k1_interpl, k2_interpl, acos(cos_theta_interpl), rho) * rho^2
             C3_T = @. direct_cor3_T(k1_interpl, k2_interpl, acos(cos_theta_interpl), rho) * rho^2
             C3_WB2t = @. direct_cor3_WB2t(k1_interpl, k2_interpl, acos(cos_theta_interpl), rho) * rho^2
+            C3_L = @. direct_cor3_L(k1_interpl, k2_interpl, acos(cos_theta_interpl), rho) * rho^2
+            C3_G = @. direct_cor3_G(k1_interpl, k2_interpl, acos(cos_theta_interpl), rho) * rho^2
 
 
 
@@ -574,24 +611,28 @@ begin
                 k1val = k1[1]
                 k2val = k2[1]
                 @assert k1val == k2val
-                lines!(ax, cos_theta_interpl, C3_RF,linewidth = 3, label = "R")
-                lines!(ax, cos_theta_interpl, C3_WB, linewidth = 3, label = "WBI")
-                lines!(ax, cos_theta_interpl, C3_WB2, linewidth = 3, label = "WBII", linestyle = :dash)
-                lines!(ax, cos_theta_interpl, C3_M, linewidth = 3, label = "M", linestyle = :dash)
-                lines!(ax, cos_theta_interpl, C3_T, linewidth = 3, label = "T", linestyle = :dash)
-                lines!(ax, cos_theta_interpl, C3_WB2t, linewidth = 3, label = "WBIIt", linestyle = :dash)
+                lines!(ax, cos_theta_interpl, C3_RF,linewidth = 3, label = "R", color=colors[1], linestyle=linestyles[1])
+                lines!(ax, cos_theta_interpl, C3_WB, linewidth = 3, label = "WBI", color=colors[2], linestyle=linestyles[2])
+                lines!(ax, cos_theta_interpl, C3_WB2, linewidth = 3, label = "WBII", color=colors[3], linestyle=linestyles[3])
+                lines!(ax, cos_theta_interpl, C3_M, linewidth = 3, label = "M", color=colors[4], linestyle=linestyles[4])
+                lines!(ax, cos_theta_interpl, C3_T, linewidth = 3, label = "T", color=colors[5], linestyle=linestyles[5])
+                lines!(ax, cos_theta_interpl, C3_WB2t, linewidth = 3, label = "WBIIt", color=colors[6], linestyle=linestyles[6])
+                lines!(ax, cos_theta_interpl, C3_L, linewidth = 3, label = "L", color=colors[7], linestyle=linestyles[7])
+                lines!(ax, cos_theta_interpl, C3_G, linewidth = 3, label = "G", color=colors[8], linestyle=linestyles[8])
 
                 scatter!(ax, cos_theta, ρ²C3, label="MC Data", color=:black)
                 errorbars!(ax, cos_theta, ρ²C3, ρ²C3_err, color=:black, whiskerwidth=4)
                 # text!(ax, 1, 0, text=L"k_1=k_2=%$(k1val)", align=(:right, :bottom), offset=(-50,10), space=:relative)
             else
                 # sweeping k1 at fixed k2 or k1 and k2
-                lines!(ax, k1_interpl, C3_RF,linewidth = 3, label = "R")
-                lines!(ax, k1_interpl, C3_WB, linewidth = 3, label = "WBI")
-                lines!(ax, k1_interpl, C3_WB2, linewidth = 3, label = "WBII", linestyle = :dash)
-                lines!(ax, k1_interpl, C3_M, linewidth = 3, label = "M", linestyle = :dash)
-                lines!(ax, k1_interpl, C3_T, linewidth = 3, label = "T", linestyle = :dash)
-                lines!(ax, k1_interpl, C3_WB2t, linewidth = 3, label = "WBIIt", linestyle = :dash)
+                lines!(ax, k1_interpl, C3_RF,linewidth = 3, label = "R", color=colors[1], linestyle=linestyles[1])
+                lines!(ax, k1_interpl, C3_WB, linewidth = 3, label = "WBI", color=colors[2], linestyle=linestyles[2])
+                lines!(ax, k1_interpl, C3_WB2, linewidth = 3, label = "WBII", color=colors[3], linestyle=linestyles[3])
+                lines!(ax, k1_interpl, C3_M, linewidth = 3, label = "M", color=colors[4], linestyle=linestyles[4])
+                lines!(ax, k1_interpl, C3_T, linewidth = 3, label = "T", color=colors[5], linestyle=linestyles[5])
+                lines!(ax, k1_interpl, C3_WB2t, linewidth = 3, label = "WBIIt", color=colors[6], linestyle=linestyles[6])
+                lines!(ax, k1_interpl, C3_L, linewidth = 3, label = "L", color=colors[7], linestyle=linestyles[7])
+                lines!(ax, k1_interpl, C3_G, linewidth = 3, label = "G", color=colors[8], linestyle=linestyles[8])
                 scatter!(ax, k1[1:2:end], ρ²C3[1:2:end], label="MC Data", color=:black)
                 errorbars!(ax, k1[1:2:end], ρ²C3[1:2:end], ρ²C3_err[1:2:end], color=:black, whiskerwidth=4)
             end
@@ -621,7 +662,7 @@ begin
     colgap!(fig.layout, 5)
     rowgap!(fig.layout, 5)
     
-    Legend(fig[1, 5], axs[1, 2], framevisible=false, tellwidth=true)    
+    Legend(fig[1, 5], axs[1, 2], framevisible=false, tellwidth=true, patchsize=(30,20), rowgap=-2)    
     
     display(fig)
     save("Plots/C3_all_sweeps.pdf", fig)

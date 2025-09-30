@@ -63,7 +63,8 @@ function compute_pair_direct_correlation_function(Φ, n, ω, homogeneity_substit
     return direct_cor  
 end
 
-
+colors = [ColorSchemes.:Dark2_8[(i-1)/7] for i in 1:8]
+linestyles = [ :solid, (:dash, :dense), :dash, (:dash, :loose), :dashdot, (:dot, :dense), :dot, (:dot, :loose)]
 
 
 function get_S2(direct_cor2, k, ρ)
@@ -158,12 +159,25 @@ n_cubed = n_tensor * n_tensor * n_tensor
 Φ_KR = -n0*log(1-n3) + (n1*n2)/(1-n3) + (n2^3)/(24*Pi*(1-n3)^2)
 
 φ3_tensor = (n2^3 - 3*n2 * n2dotn2 + 9/2*(vTv - tr(n_cubed)))/(24*Pi*(1-n3)^2) # roth
-# φ3_tensor =  3*(-n2 * n2dotn2 + vTv * n2*tr(n_squared) - tr(n_cubed)) / (16*Pi*(1-n3)^2) # tarazona wrong: should use non-traceless tensor
+# φ3_tensor =  3*(-n2 * n2dotn2 + vTv * n2*tr(n_squared) - tr(n_cubed)) / (16*Pi*(1-n3)^2) # tarazona: dont use: should use traceless tensor
 
 Φ_T = -n0*log(1-n3) + (n1*n2-n1dotn2)/(1-n3) + φ3_tensor
 
 Φ_WB2t = - n0*log(1-n3) +  (1+n3^2*ϕ2WB2(n3)/9)*(n1*n2-n1dotn2)/(1-n3) +
         (1-4*n3*ϕ3WB2(n3)/9) * φ3_tensor
+
+#Lutsko’s Phi3
+Φ3_L_func(A, B) = ((8A + 2B)/9*n2^3 - 2*A*n2*n2dotn2 +3*A*vTv - (A+B)*n2*tr(n_squared) + (2B-A)*tr(n_cubed))/(24*Pi*(1-n3)^2)
+
+# Tarazona is A=3/2, B=-3/2: fill in random numbers to check
+@assert abs(substitute(φ3_tensor, Dict(n3 =>0.1523, n2=>0.53, n2x=>0.1, n2y=>0.2, n2z=>0.3, n2xx=>0.01, n2xy=>0.02, n2xz=>0.03, n2yx=>0.02, n2yy=>0.04, n2yz=>0.05, n2zx=>0.03, n2zy=>0.05, n2zz=>0.06)) - 
+substitute(Φ3_L_func(3/2, -3/2), Dict(n2=>0.53, n2x=>0.1, n2y=>0.2, n2z=>0.3, n2xx=>0.01, n2xy=>0.02, n2xz=>0.03, n2yx=>0.02, n2yy=>0.04, n2yz=>0.05, n2zx=>0.03, n2zy=>0.05, n2zz=>0.06, n3 =>0.1523, ))) < 1e-17
+
+# Lutsko is A=1, B=0
+Φ_L = - n0*log(1-n3) +  (n1*n2-n1dotn2)/(1-n3) + Φ3_L_func(1, 0)
+# Gül is A = 1.3, B = -1
+Φ_G = - n0*log(1-n3) +  (n1*n2-n1dotn2)/(1-n3) + Φ3_L_func(1.3, -1)
+
 
 homogeneity_substitutions = Dict(
     Pi=>pi,
@@ -183,6 +197,8 @@ direct_cor2_M = compute_pair_direct_correlation_function(Φ_M, n, ω, homogeneit
 direct_cor2_KR = compute_pair_direct_correlation_function(Φ_KR, n_KR, ω_KR, homogeneity_substitutions)
 direct_cor2_T = compute_pair_direct_correlation_function(Φ_T, n_T, ω_T, homogeneity_substitutions)
 direct_cor2_WB2t = compute_pair_direct_correlation_function(Φ_WB2t, n_T, ω_T, homogeneity_substitutions)
+direct_cor2_L = compute_pair_direct_correlation_function(Φ_L, n_T, ω_T, homogeneity_substitutions)
+direct_cor2_G = compute_pair_direct_correlation_function(Φ_G, n_T, ω_T, homogeneity_substitutions)
 
 @show direct_cor2_RF(0.1, 0.94)*0.94
 @show direct_cor2_WB(0.1, 0.94)*0.94
@@ -191,6 +207,8 @@ direct_cor2_WB2t = compute_pair_direct_correlation_function(Φ_WB2t, n_T, ω_T, 
 @show direct_cor2_KR(0.1, 0.94)*0.94
 @show direct_cor2_T(0.1, 0.94)*0.94
 @show direct_cor2_WB2t(0.1, 0.94)*0.94
+@show direct_cor2_L(0.1, 0.94)*0.94
+@show direct_cor2_G(0.1, 0.94)*0.94
 @assert abs(direct_cor2_RF(0.1, 0.94) - find_analytical_C_PY(0.1, 0.94/6*π)) < 1e-5
 @assert abs(direct_cor2_KR(0.1, 0.94) - find_analytical_C_PY(0.1, 0.94/6*π)) < 1e-5
 # @assert abs(direct_cor2_T(0.1, 0.94) - find_analytical_C_k(0.1, 0.94/6*π)) < 1e-5
@@ -237,13 +255,17 @@ begin
         c2_WB = [direct_cor2_WB(ki, ρval)*ρval for ki in k]
         c2_WB2 = [direct_cor2_WB2(ki, ρval)*ρval for ki in k]
         c2_M = [direct_cor2_M(ki, ρval)*ρval for ki in k]
+        c2_L = [direct_cor2_L(ki, ρval)*ρval for ki in k]
+        c2_G = [direct_cor2_G(ki, ρval)*ρval for ki in k]
 
-        lines!(ax, k, c2_RF,  linewidth = 3, label = "R")
-        lines!(ax, k, c2_WB, linewidth = 3, label = "WBI")
-        lines!(ax, k, c2_WB2,  linewidth = 3, label = "WBII", linestyle=:dash)
-        lines!(ax, k, c2_M, linewidth = 3, label = "M", linestyle=:dash)
-        lines!(ax, sol1.k, sol1.ck,  linewidth = 3, label = "V")
-        lines!(ax, sol2.k, sol2.ck,  linewidth = 3, label = "MHNC", linestyle=:dash)
+        lines!(ax, k, c2_RF,  linewidth = 3, label = "R", color=colors[1], linestyle=linestyles[1])
+        lines!(ax, k, c2_WB, linewidth = 3, label = "WBI", color=colors[2], linestyle=linestyles[2])
+        lines!(ax, k, c2_WB2,  linewidth = 3, label = "WBII", color=colors[3], linestyle=linestyles[3])
+        lines!(ax, k, c2_M, linewidth = 3, label = "M", color=colors[4], linestyle=linestyles[4])
+        lines!(ax, k, c2_L, linewidth = 3, label = "L", color=colors[5], linestyle=linestyles[5])
+        lines!(ax, k, c2_G, linewidth = 3, label = "G", color=colors[6], linestyle=linestyles[6])
+        lines!(ax, sol1.k, sol1.ck,  linewidth = 3, label = "V", color=colors[7], linestyle=linestyles[7])
+        lines!(ax, sol2.k, sol2.ck,  linewidth = 3, label = "MHNC", color=colors[8], linestyle=linestyles[8])
     end
     data = readdlm("Processed_Data/Sk/mean/Sk_rho_$(ρval).txt")
     k_data = data[:, 1]
@@ -253,7 +275,7 @@ begin
     scatter!(ax11, k_data, c2_data, color = :black, label = "MC Data", markersize=6)
     scatter!(ax12, k_data, c2_data, color = :black, label = "MC Data", markersize=10)
 
-    axislegend(ax11, position = :rb, framevisible=false)
+    axislegend(ax11, position = :rb, framevisible=false,patchsize=(30,20), rowgap=-2)
 
     for (ax, label) in zip([ax11, ax12], ["(a)", "(b)"])
         text!(ax,
@@ -283,17 +305,21 @@ S2_RF = [get_S2(direct_cor2_RF, ki, ρval) for ki in k]
 S2_WB = [get_S2(direct_cor2_WB, ki, ρval) for ki in k]
 S2_WB2 = [get_S2(direct_cor2_WB2, ki, ρval) for ki in k]
 S2_M = [get_S2(direct_cor2_M, ki, ρval) for ki in k]
+S2_L = [get_S2(direct_cor2_L, ki, ρval) for ki in k]
+S2_G = [get_S2(direct_cor2_G, ki, ρval) for ki in k]
 data = readdlm("Processed_Data/Sk/mean/Sk_rho_$(ρval).txt")
 k_data = data[:, 1]
 S2_data = data[:, 2]
 
 for ax in [ax1, ax2, ax3]
-    lines!(ax, k, S2_RF,  linewidth = 3, label = "R")
-    lines!(ax, k, S2_WB,  linewidth = 3, label = "WBI")
-    lines!(ax, k, S2_WB2,  linewidth = 3, label = "WBII", linestyle=:dash)
-    lines!(ax, k, S2_M,  linewidth = 3, label = "M", linestyle=:dash)
-    lines!(ax, sol1.k, sol1.Sk,  linewidth = 3, label = "V")
-    lines!(ax, sol2.k, sol2.Sk,  linewidth = 3, label = "MHNC", linestyle=:dash)
+    lines!(ax, k, S2_RF,  linewidth = 3, label = "R", color=colors[1], linestyle=linestyles[1])
+    lines!(ax, k, S2_WB,  linewidth = 3, label = "WBI", color=colors[2], linestyle=linestyles[2])
+    lines!(ax, k, S2_WB2,  linewidth = 3, label = "WBII", color=colors[3], linestyle=linestyles[3])
+    lines!(ax, k, S2_M,  linewidth = 3, label = "M", color=colors[4], linestyle=linestyles[4])
+    lines!(ax, k, S2_L,  linewidth = 3, label = "L", color=colors[5], linestyle=linestyles[5])
+    lines!(ax, k, S2_G,  linewidth = 3, label = "G", color=colors[6], linestyle=linestyles[6])
+    lines!(ax, sol1.k, sol1.Sk,  linewidth = 3, label = "V", color=colors[7], linestyle=linestyles[7])
+    lines!(ax, sol2.k, sol2.Sk,  linewidth = 3, label = "MHNC", color=colors[8], linestyle=linestyles[8])
 end
 scatter!(ax1, k_data, S2_data, color = :black, label = "MC Data", markersize=6)
 scatter!(ax2, k_data, S2_data, color = :black, label = "MC Data", markersize=10)
@@ -326,7 +352,7 @@ end
 
 
 # axislegend(ax, position = :rt)
-axislegend(ax1, position = :rt, nbanks=2, framevisible=false)
+axislegend(ax1, position = :rt, nbanks=2, framevisible=false, patchsize=(30,20), rowgap=-2)
 display(fig)
 
 save("Plots/Sk_rho_0.94.pdf", fig)

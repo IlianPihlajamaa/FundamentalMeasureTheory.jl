@@ -312,6 +312,18 @@ n_cubed = n_tensor * n_tensor * n_tensor
 Φ_WB2t = - n0*log(1-n3) +  (1+n3^2*ϕ2WB2(n3)/9)*(n1*n2-n1dotn2)/(1-n3) +
         (1-4*n3*ϕ3WB2(n3)/9) * φ3_tensor
 
+#Lutsko’s Phi3
+Φ3_L_func(A, B) = ((8A + 2B)/9*n2^3 - 2*A*n2*n2dotn2 +3*A*vTv - (A+B)*n2*tr(n_squared) + (2B-A)*tr(n_cubed))/(24*Pi*(1-n3)^2)
+
+# Tarazona is A=3/2, B=-3/2: fill in random numbers to check
+@assert abs(substitute(φ3_tensor, Dict(n3 =>0.1523, n2=>0.53, n2x=>0.1, n2y=>0.2, n2z=>0.3, n2xx=>0.01, n2xy=>0.02, n2xz=>0.03, n2yx=>0.02, n2yy=>0.04, n2yz=>0.05, n2zx=>0.03, n2zy=>0.05, n2zz=>0.06)) - 
+substitute(Φ3_L_func(3/2, -3/2), Dict(n2=>0.53, n2x=>0.1, n2y=>0.2, n2z=>0.3, n2xx=>0.01, n2xy=>0.02, n2xz=>0.03, n2yx=>0.02, n2yy=>0.04, n2yz=>0.05, n2zx=>0.03, n2zy=>0.05, n2zz=>0.06, n3 =>0.1523, ))) < 1e-17
+
+# Lutsko is A=1, B=0
+Φ_L = - n0*log(1-n3) +  (n1*n2-n1dotn2)/(1-n3) + Φ3_L_func(1, 0)
+# Gül is A = 1.3, B = -1
+Φ_G = - n0*log(1-n3) +  (n1*n2-n1dotn2)/(1-n3) + Φ3_L_func(1.3, -1)
+
 homogeneity_substitutions = Dict(
     Pi=>pi,
     n0=>ρ, 
@@ -330,6 +342,8 @@ direct_cor2_M = compute_pair_direct_correlation_function(Φ_M, n, ω, homogeneit
 direct_cor2_KR = compute_pair_direct_correlation_function(Φ_KR, n_KR, ω_KR, homogeneity_substitutions)
 direct_cor2_T = compute_pair_direct_correlation_function(Φ_T, n_T, ω_T, homogeneity_substitutions)
 direct_cor2_WB2t = compute_pair_direct_correlation_function(Φ_WB2t, n_T, ω_T, homogeneity_substitutions)
+direct_cor2_L = compute_pair_direct_correlation_function(Φ_L, n_T, ω_T, homogeneity_substitutions)
+direct_cor2_G = compute_pair_direct_correlation_function(Φ_G, n_T, ω_T, homogeneity_substitutions)
 
 @show direct_cor2_RF(0.1, 0.94)*0.94
 @show direct_cor2_WB(0.1, 0.94)*0.94
@@ -338,6 +352,8 @@ direct_cor2_WB2t = compute_pair_direct_correlation_function(Φ_WB2t, n_T, ω_T, 
 @show direct_cor2_KR(0.1, 0.94)*0.94
 @show direct_cor2_T(0.1, 0.94)*0.94
 @show direct_cor2_WB2t(0.1, 0.94)*0.94
+@show direct_cor2_L(0.1, 0.94)*0.94
+@show direct_cor2_G(0.1, 0.94)*0.94
 @assert abs(direct_cor2_RF(0.1, 0.94) - find_analytical_C_k(0.1, 0.94/6*π)) < 1e-5
 @assert abs(direct_cor2_KR(0.1, 0.94) - find_analytical_C_k(0.1, 0.94/6*π)) < 1e-5
 # @assert abs(direct_cor2_T(0.1, 0.94) - find_analytical_C_k(0.1, 0.94/6*π)) < 1e-5
@@ -350,6 +366,8 @@ direct_cor3_M = compute_triplet_direct_correlation_function(Φ_M, n, ω, homogen
 direct_cor3_KR = compute_triplet_direct_correlation_function(Φ_KR, n_KR, ω_KR, homogeneity_substitutions)
 direct_cor3_T = compute_triplet_direct_correlation_function(Φ_T, n_T, ω_T, homogeneity_substitutions)
 direct_cor3_WB2t = compute_triplet_direct_correlation_function(Φ_WB2t, n_T, ω_T, homogeneity_substitutions)
+direct_cor3_L = compute_triplet_direct_correlation_function(Φ_L, n_T, ω_T, homogeneity_substitutions)
+direct_cor3_G = compute_triplet_direct_correlation_function(Φ_G, n_T, ω_T, homogeneity_substitutions)
 
 @show direct_cor3_RF(0.1, 0.1, acos(-0.175), 0.94)*0.94^2
 @show direct_cor3_WB(0.1, 0.1, acos(-0.175), 0.94)*0.94^2
@@ -358,6 +376,8 @@ direct_cor3_WB2t = compute_triplet_direct_correlation_function(Φ_WB2t, n_T, ω_
 @show direct_cor3_KR(0.1, 0.1, acos(-0.175), 0.94)*0.94^2
 @show direct_cor3_T(0.1, 0.1, acos(-0.175), 0.94)*0.94^2
 @show direct_cor3_WB2t(0.1, 0.1, acos(-0.175), 0.94)*0.94^2
+@show direct_cor3_L(0.1, 0.1, acos(-0.175), 0.94)*0.94^2
+@show direct_cor3_G(0.1, 0.1, acos(-0.175), 0.94)*0.94^2
 
 direct_cor4_RF = compute_quadruplet_direct_correlation_function(Φ_RF, n, ω, homogeneity_substitutions)
 direct_cor4_WB = compute_quadruplet_direct_correlation_function(Φ_WB, n, ω, homogeneity_substitutions)
@@ -366,6 +386,8 @@ direct_cor4_M = compute_quadruplet_direct_correlation_function(Φ_M, n, ω, homo
 direct_cor4_KR = compute_quadruplet_direct_correlation_function(Φ_KR, n_KR, ω_KR, homogeneity_substitutions)
 direct_cor4_T = compute_quadruplet_direct_correlation_function(Φ_T, n_T, ω_T, homogeneity_substitutions)
 direct_cor4_WB2t = compute_quadruplet_direct_correlation_function(Φ_WB2t, n_T, ω_T, homogeneity_substitutions)
+direct_cor4_L = compute_quadruplet_direct_correlation_function(Φ_L, n_T, ω_T, homogeneity_substitutions)
+direct_cor4_G = compute_quadruplet_direct_correlation_function(Φ_G, n_T, ω_T, homogeneity_substitutions)
 
 @show direct_cor4_RF(2.2, 2.2, 2.2, π/4, acos(0.025), 0.5, 0.94)*0.94^3
 @show direct_cor4_WB(2.2, 2.2, 2.2, π/4, acos(0.025), 0.5, 0.94)*0.94^3
@@ -374,6 +396,8 @@ direct_cor4_WB2t = compute_quadruplet_direct_correlation_function(Φ_WB2t, n_T, 
 @show direct_cor4_KR(2.2, 2.2, 2.2, π/4, acos(0.025), 0.5, 0.94)*0.94^3
 @show direct_cor4_T(2.2, 2.2, 2.2, π/4, acos(0.025), 0.5, 0.94)*0.94^3
 @show direct_cor4_WB2t(2.2, 2.2, 2.2, π/4, acos(0.025), 0.5, 0.94)*0.94^3
+@show direct_cor4_L(2.2, 2.2, 2.2, π/4, acos(0.025), 0.5, 0.94)*0.94^3
+@show direct_cor4_G(2.2, 2.2, 2.2, π/4, acos(0.025), 0.5, 0.94)*0.94^3
 
 @assert direct_cor2_RF(0.1, 0.94) * 0.94 ≈ -58.16983018151516
 @assert direct_cor2_WB(0.1, 0.94) * 0.94 ≈ -51.88510371086945
@@ -441,6 +465,7 @@ begin
     S4_M =  @time [get_S4(direct_cor2_M, direct_cor3_M, direct_cor4_M, kval, kval, kval, θ12, acos(cosθ13), ϕ23, ρval) for cosθ13 in cosθ13_arr, ϕ23 in ϕ23_arr]
     S4_T =  @time [get_S4(direct_cor2_T, direct_cor3_T, direct_cor4_T, kval, kval, kval, θ12, acos(cosθ13), ϕ23, ρval) for cosθ13 in cosθ13_arr, ϕ23 in ϕ23_arr]
     S4_WB2t = @time [get_S4(direct_cor2_WB2t, direct_cor3_WB2t, direct_cor4_WB2t, kval, kval, kval, θ12, acos(cosθ13), ϕ23, ρval) for cosθ13 in cosθ13_arr, ϕ23 in ϕ23_arr]
+    
     foo(x...) = 0.0 
     S4_conv = @time [get_S4(direct_cor2_WB2, foo, foo, kval, kval, kval, θ12, acos(cosθ13), ϕ23, ρval) for cosθ13 in cosθ13_arr, ϕ23 in ϕ23_arr]
 
@@ -537,9 +562,13 @@ begin
                 S4_WB2 = @time [get_S4(direct_cor2_WB2, direct_cor3_WB2, direct_cor4_WB2, k1, k2, k3, θ12, θ13, ϕ23, ρval) for ϕ23 in ϕ23_arr]
                 S4_M = @time [get_S4(direct_cor2_M, direct_cor3_M, direct_cor4_M, k1, k2, k3, θ12, θ13, ϕ23, ρval) for ϕ23 in ϕ23_arr]
                 S4_T = @time [get_S4(direct_cor2_T, direct_cor3_T, direct_cor4_T, k1, k2, k3, θ12, θ13, ϕ23, ρval) for ϕ23 in ϕ23_arr]
-                S4_WB2t = @time [get_S4(direct_cor2_WB2t, direct_cor3_WB2t, direct_cor4_WB2t, k1, k2, k3, θ12, θ13, ϕ23, ρval) for ϕ23 in ϕ23_arr]
+                S4_WB2t = @time [get_S4(direct_cor2_WB2t, direct_cor3_WB2t, direct_cor4_WB2t, k1, k2, k3, θ12, θ13, 
+                ϕ23, ρval) for ϕ23 in ϕ23_arr]
+                S4_L = @time [get_S4(direct_cor2_L, direct_cor3_L, direct_cor4_L, k1, k2, k3, θ12, θ13, ϕ23, ρval) for ϕ23 in ϕ23_arr]
+                S4_G = @time [get_S4(direct_cor2_G, direct_cor3_G, direct_cor4_G, k1, k2, k3, θ12, θ13, ϕ23, ρval) for ϕ23 in ϕ23_arr]
                 S4_conv2 = @time [get_S4(direct_cor2_WB2, foo, foo, k1, k2, k3, θ12, θ13, ϕ23, ρval) for ϕ23 in ϕ23_arr]
                 S4_conv3 = @time [get_S4(direct_cor2_RF, direct_cor3_RF, foo, k1, k2, k3, θ12, θ13, ϕ23, ρval) for ϕ23 in ϕ23_arr]
+
 
 
                 lines!(ax, ϕ23_arr, S4_RF, linewidth = 3, label = "Rosenfeld")
@@ -549,6 +578,9 @@ begin
                 lines!(ax, ϕ23_arr, S4_T, linewidth = 3, label = "Tarazona", linestyle = :dash)
                 lines!(ax, ϕ23_arr, S4_WB2t, linewidth = 3, label = "White-Bear II (tensor)", linestyle = :dash)
                 lines!(ax, ϕ23_arr, S4_conv2, linewidth = 3, label = "Convolution 2-body (RF)", linestyle = :dot)
+                lines!(ax, ϕ23_arr, S4_L, linewidth = 2, label = "Lutsko", linestyle= :dashdot)
+                lines!(ax, ϕ23_arr, S4_G, linewidth = 2, label = "Gül", linestyle= :dashdot)
+                
                 # lines!(ax, ϕ23_arr, S4_conv3, linewidth = 2, label = "Convolution 3-body (RF)", linestyle= :dash, color= :blue)
                 
 
@@ -626,6 +658,8 @@ begin
             S4_M = [get_S4(direct_cor2_M, direct_cor3_M, direct_cor4_M, k1, k2, k3, θ12, θ13, ϕ23, ρval) for ϕ23 in ϕ23_arr]
             S4_T = [get_S4(direct_cor2_T, direct_cor3_T, direct_cor4_T, k1, k2, k3, θ12, θ13, ϕ23, ρval) for ϕ23 in ϕ23_arr]
             S4_WB2t = [get_S4(direct_cor2_WB2t,direct_cor3_WB2t,direct_cor4_WB2t,k1,k2,k3 ,θ12 ,θ13 ,ϕ23 ,ρval) for ϕ23 in ϕ23_arr]
+            S4_L = [get_S4(direct_cor2_L, direct_cor3_L, direct_cor4_L, k1, k2, k3, θ12, θ13, ϕ23, ρval) for ϕ23 in ϕ23_arr]
+            S4_G = [get_S4(direct_cor2_G, direct_cor3_G, direct_cor4_G, k1, k2, k3, θ12, θ13, ϕ23, ρval) for ϕ23 in ϕ23_arr]
             S4_conv = [get_S4(direct_cor2_RF,foo,foo,k1,k2,k3 ,θ12 ,θ13 ,ϕ23 ,ρval) for ϕ23 in ϕ23_arr]
 
             lines!(ax, ϕ23_arr, S4_RF, linewidth = 3, label = "R")
@@ -634,6 +668,8 @@ begin
             lines!(ax, ϕ23_arr, S4_M,  linewidth = 3, label = "M", linestyle = :dash)
             lines!(ax, ϕ23_arr, S4_T, linewidth = 3, label = "T", linestyle = :dash)
             lines!(ax, ϕ23_arr, S4_WB2t, linewidth = 3, label = "WBIIt", linestyle = :dash)
+            lines!(ax, ϕ23_arr, S4_L, linewidth = 2, label = "L", linestyle= :dashdot)
+            lines!(ax, ϕ23_arr, S4_G, linewidth = 2, label = "G", linestyle= :dashdot)
             lines!(ax, ϕ23_arr, S4_conv, linewidth = 3, label = "conv", linestyle = :dot)
 
             f = h5open("Processed_Data/S4/Mean/S4_rho_$(ρval)_k1_$(k1)_k2_$(k2)_k3_$(k3)_costheta12_$(cos(θ12)).h5", "r")
