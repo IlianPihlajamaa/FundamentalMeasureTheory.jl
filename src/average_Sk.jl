@@ -3,9 +3,9 @@ import Pkg; Pkg.activate(".")
 
 using DelimitedFiles
 using CairoMakie
+using Statistics
 
-
-files = filter(x -> !(contains(x, "Equilibration")), readdir("Data"))
+files = filter(x -> !(contains(x, "Equilibration")), readdir("Processed_Data/Sk/"))
 for rho in [0.8, 0.94]
     files_rho = filter(x -> contains(x, "rho_$(rho)"), files)
     Sk_total = []
@@ -25,11 +25,13 @@ for rho in [0.8, 0.94]
     end
 
     Sk_total_mean = sum(Sk_total; init=zeros(length(Sk_total[1]))) ./ length(Sk_total)
+    std_of_mean_Sk = std(reduce(hcat, Sk_total); dims=2) ./ sqrt(length(Sk_total))
+
     @assert allequal(k)
     k_mean = k[1]
     println("averaged Sk for ρ = $(rho) for $(length(Sk_total)) seeds")
     open("Processed_Data/Sk/mean/Sk_rho_$(rho).txt", "w") do io
-        writedlm(io, [k_mean Sk_total_mean])
+        writedlm(io, [k_mean Sk_total_mean std_of_mean_Sk])
     end
 end
 
