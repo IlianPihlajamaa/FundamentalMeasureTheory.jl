@@ -54,7 +54,7 @@ sol2 = @time solve(system, closure2, method);
 begin
     fig = Figure(size=(500, 300))
     ax11 = Axis(fig[1, 1], xlabel=L"k", ylabel=L"\rho c^{(2)}(k)", limits=(0, 10, nothing, nothing))
-    ax12 = Axis(fig[1, 2], xlabel=L"k", ylabel=L"\rho c^{(2)}(k)", limits=(0, 2, -53, -45))
+    ax12 = Axis(fig[1, 2], xlabel=L"k", ylabel=L"\rho c^{(2)}(k)", limits=(0, 2, -59, -45))
 
 
     for ax in [ax11, ax12]
@@ -83,7 +83,6 @@ begin
     c2_data = c_from_s(S2_data, ρval) * ρval
     δc2_data = δc_from_s(S2_data, δS2_data, ρval) * ρval
     mask = .!isnan.(δc2_data)
-    @show δc2_data[mask]
     errorbars!(ax11, k_data[mask], c2_data[mask], δc2_data[mask], color=:black, whiskerwidth=6)
     scatter!(ax11, k_data[mask], c2_data[mask], color=:black, label="MC Data", markersize=6)
     scatter!(ax12, k_data[mask], c2_data[mask], color=:black, label="MC Data", markersize=10)
@@ -102,7 +101,7 @@ begin
         )
     end
 
-
+    colgap!(fig.layout, 5)
     display(fig)
     save("Plots/ck_rho_0.94.pdf", fig)
     save("Plots/ck_rho_0.94.png", fig)
